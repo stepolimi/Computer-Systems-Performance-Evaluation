@@ -1,0 +1,89 @@
+%TODO: RISULTATI NON TORNANO
+
+K = 50;
+M = 200;
+%l1, l2, p
+He = [0.1, 0.05, 0.5];
+%l1, l2
+Ho = [0.1, 0.5];
+
+Rand = rand(M,K);
+Rand2 = rand(M,K);
+A = zeros(M,K);
+%Generate arrival times according to random number generation following an
+%Hyper exponential distribution
+for i=1:size(Rand,2)
+    for j=1:size(Rand,1)
+        if Rand(j,i) < He(3)
+            A(j,i) = -log(Rand(j,i))/He(1);
+        else
+            A(j,i) = -log(Rand(j,i))/He(2);
+        end
+    end
+end
+A = sort(A);
+
+%Generate service times according to random number generation following an
+%Hypo exponential distribution
+for i=1:M
+    for j=1:K
+        R(i,j) = -log(rand(j))/0.1 - log(rand())/0.5
+R = - log(Rand)./Ho(1) - log(Rand)./Ho(2);
+R = sort(R);
+
+%Completition and arrival times
+C = zeros(M,K);
+for i= 1:size(A,1)
+    for j= 1:size(A,2)
+        C(i,j) = sum(A(1:i,j)) + R(i,j);
+    end
+end
+Ar = zeros(M,K);
+for i= 1:size(A,1)
+    for j= 1:size(A,2)
+        Ar(i,j) = sum(A(1:i,j));
+    end
+end
+plot(Ar(:,1),  [1:200]/200, "-", C(:,1),  [1:200]/200, "-")
+
+%Compute confidence interval of the system average service times
+Rrun = sum(R)/M;
+xb = sum(Rrun) / K;
+s2 = sum((Rrun - xb).^2)/(K-1);
+Rinterval = [xb - 1.96 * sqrt(s2/K), xb + 1.96 * sqrt(s2/K)]
+
+%Compute average number of jobs
+N = zeros(M*2,K);
+for i=1:K
+    Arr = [Ar(:,i) ones(M,1)];
+    Comp = [C(:,i) ones(M, 1)*-1];
+    conc = [Arr ; Comp];
+    sorted = sortrows(conc);
+    N(:,i) = cumsum(sorted(:,2));
+end
+
+%Compute confidence interval of the average number of jobs
+Nrun = sum(N)/(M*2);
+xb = sum(Nrun) / K;
+s2 = sum((Nrun - xb).^2)/(K-1);
+Ninterval = [xb - 1.96 * sqrt(s2/K), xb + 1.96 * sqrt(s2/K)]
+
+%Compute utilization
+Zerosum = sum(N == 0);
+U = 1 - Zerosum / (M*2);
+
+%Compute confidence interval of the utilization
+xb = sum(U) / K;
+s2 = sum((U - xb).^2)/(K-1);
+Uinterval = [xb - 1.96 * sqrt(s2/K), xb + 1.96 * sqrt(s2/K)]
+
+%Compute throughput
+for i=1:K
+    X(1,i) = M/max(C(:,i));
+end
+
+%Compute confidence interval of the throughput
+xb = sum(X) / K;
+s2 = sum((X - xb).^2)/(K-1);
+Xinterval = [xb - 1.96 * sqrt(s2/K), xb + 1.96 * sqrt(s2/K)]
+
